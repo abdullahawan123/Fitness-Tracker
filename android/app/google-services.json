@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1066024690152",
+    "project_id": "step-t",
+    "storage_bucket": "step-t.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066024690152:android:b0275ad87fbb034b00845d",
+        "android_client_info": {
+          "package_name": "com.example.fitness_tracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADadnKzQ38V7rFqDCriS7vABr29xeQva4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1066024690152:android:384aa9fbfdd9efa800845d",
+        "android_client_info": {
+          "package_name": "com.tarekalabd.stepstracker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADadnKzQ38V7rFqDCriS7vABr29xeQva4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
