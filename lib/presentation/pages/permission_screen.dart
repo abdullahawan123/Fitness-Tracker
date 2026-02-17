@@ -3,19 +3,32 @@ import 'package:fitness_tracker/core/theme/app_theme.dart';
 import 'package:fitness_tracker/presentation/pages/home_page.dart';
 import 'package:fitness_tracker/presentation/widgets/custom_widgets.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:get_it/get_it.dart';
+import 'package:fitness_tracker/domain/repositories/fitness_repository.dart';
 
 class PermissionScreen extends StatelessWidget {
   const PermissionScreen({super.key});
 
   Future<void> _requestPermissions(BuildContext context) async {
+    // Request basic permissions first
     await [
       Permission.activityRecognition,
       Permission.location,
       Permission.sensors,
+      Permission.notification,
     ].request();
 
-    // Navigate even if denied for demo purposes,
-    // but in real app we'd show alert if mandatory permissions are missing
+    // Then request background location (separate dialog on Android 11+)
+    await Permission.locationAlways.request();
+
+    // Request Health Permissions
+    try {
+      final repository = GetIt.I<FitnessRepository>();
+      await repository.requestHealthPermissions();
+    } catch (e) {
+      debugPrint('Health permissions error: $e');
+    }
+
     if (context.mounted) {
       Navigator.pushReplacement(
         context,

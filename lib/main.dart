@@ -9,6 +9,8 @@ import 'package:fitness_tracker/presentation/blocs/user/user_bloc.dart';
 import 'package:fitness_tracker/presentation/pages/splash_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 
+import 'package:fitness_tracker/presentation/blocs/settings/settings_bloc.dart';
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -42,12 +44,19 @@ class MyApp extends StatelessWidget {
           create: (_) => di.sl<ActivityBloc>()..add(LoadActivities()),
         ),
         BlocProvider(create: (_) => di.sl<UserBloc>()..add(LoadUser())),
+        BlocProvider(create: (_) => di.sl<SettingsBloc>()..add(LoadSettings())),
       ],
-      child: MaterialApp(
-        title: 'FitTrack Pro',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.darkTheme,
-        home: const SplashScreen(),
+      child: BlocBuilder<SettingsBloc, SettingsState>(
+        builder: (context, state) {
+          return MaterialApp(
+            title: 'FitTrack Pro',
+            debugShowCheckedModeBanner: false,
+            theme: state.settings.isDarkMode
+                ? AppTheme.darkTheme
+                : AppTheme.lightTheme,
+            home: const SplashScreen(),
+          );
+        },
       ),
     );
   }

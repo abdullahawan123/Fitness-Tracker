@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:fitness_tracker/core/theme/app_theme.dart';
 import 'package:fitness_tracker/presentation/blocs/user/user_bloc.dart';
 import 'package:fitness_tracker/presentation/widgets/custom_widgets.dart';
+import 'package:fitness_tracker/presentation/blocs/settings/settings_bloc.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -60,18 +61,40 @@ class ProfileScreen extends StatelessWidget {
                     _MenuItem(icon: Icons.lock_outline, title: 'Privacy'),
                   ]),
                   const SizedBox(height: 24),
-                  _buildMenuSection(context, 'Preferences', [
-                    _MenuItem(
-                      icon: Icons.dark_mode_outlined,
-                      title: 'Dark Mode',
-                      trailing: Switch(value: true, onChanged: (_) {}),
-                    ),
-                    _MenuItem(
-                      icon: Icons.height,
-                      title: 'Units',
-                      trailing: const Text('Metric'),
-                    ),
-                  ]),
+                  BlocBuilder<SettingsBloc, SettingsState>(
+                    builder: (context, settingsState) {
+                      return _buildMenuSection(context, 'Preferences', [
+                        _MenuItem(
+                          icon: Icons.dark_mode_outlined,
+                          title: 'Dark Mode',
+                          trailing: Switch(
+                            value: settingsState.settings.isDarkMode,
+                            onChanged: (val) {
+                              context.read<SettingsBloc>().add(
+                                ToggleDarkMode(val),
+                              );
+                            },
+                          ),
+                        ),
+                        _MenuItem(
+                          icon: Icons.height,
+                          title: 'Units',
+                          trailing: Text(
+                            settingsState.settings.useMetricUnits
+                                ? 'Metric'
+                                : 'Imperial',
+                          ),
+                          onPressed: () {
+                            context.read<SettingsBloc>().add(
+                              ToggleUnits(
+                                !settingsState.settings.useMetricUnits,
+                              ),
+                            );
+                          },
+                        ),
+                      ]);
+                    },
+                  ),
                   const SizedBox(height: 24),
                   _buildMenuSection(context, 'More', [
                     _MenuItem(
@@ -133,8 +156,14 @@ class _MenuItem extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget? trailing;
+  final VoidCallback? onPressed;
 
-  const _MenuItem({required this.icon, required this.title, this.trailing});
+  const _MenuItem({
+    required this.icon,
+    required this.title,
+    this.trailing,
+    this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +173,7 @@ class _MenuItem extends StatelessWidget {
       trailing:
           trailing ??
           const Icon(Icons.chevron_right, color: AppColors.textBody, size: 20),
-      onTap: () {},
+      onTap: onPressed ?? () {},
     );
   }
 }

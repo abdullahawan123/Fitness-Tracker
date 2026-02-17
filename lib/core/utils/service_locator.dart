@@ -5,6 +5,7 @@ import 'package:fitness_tracker/domain/repositories/fitness_repository.dart';
 import 'package:fitness_tracker/data/repositories/fitness_repository_impl.dart';
 import 'package:fitness_tracker/presentation/blocs/activity/activity_bloc.dart';
 import 'package:fitness_tracker/presentation/blocs/user/user_bloc.dart';
+import 'package:fitness_tracker/presentation/blocs/settings/settings_bloc.dart';
 
 final sl = GetIt.instance;
 
@@ -18,6 +19,7 @@ Future<void> init() async {
   // Bloc
   sl.registerFactory(() => ActivityBloc(repository: sl()));
   sl.registerFactory(() => UserBloc(repository: sl()));
+  sl.registerFactory(() => SettingsBloc());
 
   // Use cases (TBD)
 

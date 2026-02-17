@@ -38,9 +38,23 @@ class ActivityLoading extends ActivityState {}
 class ActivitiesLoaded extends ActivityState {
   final List<Activity> activities;
   final int todaySteps;
-  ActivitiesLoaded(this.activities, this.todaySteps);
+  final double todayDistance;
+  final double todayCalories;
+
+  ActivitiesLoaded(
+    this.activities,
+    this.todaySteps,
+    this.todayDistance,
+    this.todayCalories,
+  );
+
   @override
-  List<Object?> get props => [activities, todaySteps];
+  List<Object?> get props => [
+    activities,
+    todaySteps,
+    todayDistance,
+    todayCalories,
+  ];
 }
 
 class TrackingInProgress extends ActivityState {
@@ -80,15 +94,30 @@ class ActivityBloc extends Bloc<ActivityEvent, ActivityState> {
     emit(ActivityLoading());
     try {
       final activities = await repository.getActivities();
-      // Mocking today steps for now, in real app would sum from health/sensors
-      emit(ActivitiesLoaded(activities, 0));
+      final healthSteps = await repository.getRecentHealthSteps();
+
+      // Calculate today's stats from activities if health API is limited
+      double totalDist = 0;
+      double totalCals = 0;
+      for (var a in activities) {
+        if (a.startTime.day == DateTime.now().day) {
+          totalDist += a.distance;
+          totalCals += a.calories;
+        }
+      }
+
+      emit(ActivitiesLoaded(activities, healthSteps, totalDist, totalCals));
     } catch (e) {
-      // Handle error
+      emit(ActivitiesLoaded(const [], 0, 0, 0));
     }
   }
 
+  StreamSubscription? _distanceSubscription;
+  int _initialSteps = 0;
+
   void _onStartTracking(StartTracking event, Emitter<ActivityState> emit) {
     emit(TrackingInProgress(type: event.type));
+    _initialSteps = 0;
 
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (state is TrackingInProgress) {
@@ -98,11 +127,24 @@ class ActivityBloc extends Bloc<ActivityEvent, ActivityState> {
     });
 
     _stepSubscription = repository.getStepCount().listen((steps) {
+      if (_initialSteps == 0 && steps > 0) _initialSteps = steps;
+
       if (state is TrackingInProgress) {
         final s = state as TrackingInProgress;
+        final workoutSteps = steps - _initialSteps;
         add(
-          UpdateLiveStats(steps, s.currentDistance + 0.01),
-        ); // Mock distance increment
+          UpdateLiveStats(
+            workoutSteps > 0 ? workoutSteps : 0,
+            s.currentDistance,
+          ),
+        );
+      }
+    });
+
+    _distanceSubscription = repository.getLiveDistance().listen((distance) {
+      if (state is TrackingInProgress) {
+        final s = state as TrackingInProgress;
+        add(UpdateLiveStats(s.currentSteps, distance));
       }
     });
   }
@@ -143,6 +185,7 @@ class ActivityBloc extends Bloc<ActivityEvent, ActivityState> {
       );
     }
     _stepSubscription?.cancel();
+    _distanceSubscription?.cancel();
     _timer?.cancel();
     add(LoadActivities());
   }

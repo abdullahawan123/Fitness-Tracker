@@ -54,42 +54,71 @@ class FitnessRepositoryImpl implements FitnessRepository {
 
   @override
   Stream<double> getLiveDistance() {
+    double totalDistance = 0;
+    Position? lastPosition;
+
     return Geolocator.getPositionStream(
       locationSettings: const LocationSettings(
         accuracy: LocationAccuracy.high,
-        distanceFilter: 5,
+        distanceFilter: 2,
       ),
-    ).map(
-      (position) => 0.0,
-    ); // Simplified for now, distance calculation logic should be in BLoC or service
+    ).map((position) {
+      if (lastPosition != null) {
+        totalDistance +=
+            Geolocator.distanceBetween(
+              lastPosition!.latitude,
+              lastPosition!.longitude,
+              position.latitude,
+              position.longitude,
+            ) /
+            1000; // Convert to km
+      }
+      lastPosition = position;
+      return totalDistance;
+    });
   }
 
   @override
   Future<bool> requestHealthPermissions() async {
-    final types = [HealthDataType.STEPS, HealthDataType.HEART_RATE];
-    final permissions = [HealthDataAccess.READ, HealthDataAccess.READ];
+    final types = [
+      HealthDataType.STEPS,
+      HealthDataType.HEART_RATE,
+      HealthDataType.DISTANCE_DELTA,
+      HealthDataType.ACTIVE_ENERGY_BURNED,
+    ];
+    final permissions = [
+      HealthDataAccess.READ,
+      HealthDataAccess.READ,
+      HealthDataAccess.READ,
+      HealthDataAccess.READ,
+    ];
 
-    bool? hasPermissions = await health.hasPermissions(
-      types,
-      permissions: permissions,
-    );
-    if (hasPermissions == false) {
-      hasPermissions = await health.requestAuthorization(
+    try {
+      bool? hasPermissions = await health.hasPermissions(
         types,
         permissions: permissions,
       );
+      if (hasPermissions != true) {
+        hasPermissions = await health.requestAuthorization(
+          types,
+          permissions: permissions,
+        );
+      }
+      return hasPermissions ?? false;
+    } catch (e) {
+      print("Health error: $e");
+      return false;
     }
-    return hasPermissions ?? false;
   }
 
   @override
   Future<int> getRecentHealthSteps() async {
     final now = DateTime.now();
-    final yesterday = now.subtract(const Duration(days: 1));
+    final midnight = DateTime(now.year, now.month, now.day);
 
     List<HealthDataPoint> healthData = await health.getHealthDataFromTypes(
       types: [HealthDataType.STEPS],
-      startTime: yesterday,
+      startTime: midnight,
       endTime: now,
     );
 
